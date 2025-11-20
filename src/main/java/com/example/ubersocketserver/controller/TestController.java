@@ -4,6 +4,7 @@ import com.example.ubersocketserver.Dtos.ChatRequest;
 import com.example.ubersocketserver.Dtos.ChatResponse;
 import com.example.ubersocketserver.Dtos.TestRequest;
 import com.example.ubersocketserver.Dtos.TestResponse;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RestController;
 
 @Controller
-public class TestController {
+public class     TestController {
 
     private SimpMessagingTemplate template;
 
@@ -43,5 +44,18 @@ public class TestController {
               .message(chatRequest.getMessage())
               .build();
         return chatResponse;
+    }
+
+
+    @MessageMapping("/chat/{room}")
+    @SendTo("/topic/message/{room}")
+    public ChatResponse chatRoom(ChatRequest chatRequest, @DestinationVariable String room) {
+        return ChatResponse.builder().name(chatRequest.getName()).message(chatRequest.getMessage()).build();
+    }
+
+    @MessageMapping("/privateChat/{room}/{userId}")
+    public void privateChat(ChatRequest chatRequest, @DestinationVariable String room, @DestinationVariable String userId) {
+        ChatResponse chatResponse= ChatResponse.builder().name(chatRequest.getName()).message(chatRequest.getMessage()).build();
+        template.convertAndSendToUser(userId,"/queue/privateChat"+room, chatResponse);
     }
 }
